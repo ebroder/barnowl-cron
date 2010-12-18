@@ -15,23 +15,12 @@ package BarnOwl::Module::Cron;
 
 our $VERSION = 0.1;
 
-use BarnOwl;
-use BarnOwl::Hooks;
-use BarnOwl::Timer;
-
 use DateTime::Event::Cron;
 
-my $desc = <<'END_DESC';
-BarnOwl::Module::Cron parses ~/.barnowl/crontab, and schedules events
-based on its contents.
+use BarnOwl;
+use BarnOwl::Module::Cron::Job;
 
-~/.barnowl/crontab should be a series of lines with the same columns
-as documented in crontab(5). The "command" field is interpreted as a
-BarnOwl command. BarnOwl::Module::Cron only supports the standard
-5-column specification for recurrences (i.e. not @reboot), and does
-not support things like setting environment variables in
-~/.barnowl/crontab.
-END_DESC
+our @jobs = ();
 
 my $crontabpath = BarnOwl::get_config_dir() . '/crontab';
 if (open(my $fh, '<', "$crontabpath")) {
@@ -42,6 +31,9 @@ if (open(my $fh, '<', "$crontabpath")) {
 sub read_config {
     my $fh = shift;
     @sets = DateTime::Event::Cron->fron_crontab(file => $fh);
+    for my $set (@sets) {
+	push @jobs, BarnOwl::Module::Cron::Job->new($set);
+    }
 }
 
 1;
